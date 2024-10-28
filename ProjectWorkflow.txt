@@ -1,0 +1,75 @@
+This Flask project is a simple Todo List application. It allows users to add new items to a todo list, view incomplete and completed tasks, and mark tasks as complete.
+
+Adding an Item: Users enter a todo item in the form, which is sent to the /add route. The item is saved in the database and marked as incomplete by default.
+Displaying Items: The index route fetches incomplete and complete items from the database, passing them to the template for display.
+Marking as Complete: When a user clicks "Mark As Complete" for an item, the complete route updates the item in the database and reloads the index page to show it under completed items.
+
+In the index.html template, todo.text displays the todo item’s description. So, when the list of todo items is rendered, each item’s description is accessed via todo.text, which holds the specific text for that item.
+
+todo = TODO(text=request.form['todoitem'], complete=False)
+When a user submits the form on the index.html page, it sends a POST request to the /add route with the todoitem input (the todo description).
+The form’s input element named todoitem passes the entered text to request.form['todoitem'], retrieving the user's input.
+
+A new TODO object is then created with this text
+
+todo = TODO(text=request.form['todoitem'], complete=False)
+Here, text=request.form['todoitem'] assigns the user's input to the text attribute of the TODO instance.
+
+The user is redirected to the index route afterward
+
+return redirect(url_for('index'))
+
+
+When the user is redirected to the index route, the index() function is executed.
+Inside index(), two lists are created
+incomplete = TODO.query.filter_by(complete=False).all()
+complete = TODO.query.filter_by(complete=True).all()
+These lines query all TODO items from the database, separating them based on their complete status.
+Each item in incomplete and complete is an instance of the TODO class, which has attributes corresponding to each column in the todo table, such as id, text, and complete.
+
+incomplete gathers todos where complete=False.
+complete gathers todos where complete=True.
+These lists of todo items are then passed to index.html via render_template
+
+return render_template('index.html', complete=complete, incomplete=incomplete)
+
+In index.html, each todo item is displayed by looping through the incomplete and complete lists.
+todo.text refers to the text attribute of each TODO object in these lists, displaying the description on the page.
+
+When the user clicks on Mark As Complete next to an incomplete item on index.html, the link triggers a GET request to the /complete<id> route, passing the item’s unique id.
+
+In the /complete route:
+
+todo = TODO.query.filter_by(id=int(id)).first()
+todo.complete = True
+db.session.commit()
+
+The app finds the TODO item with the specified id.
+The item’s complete attribute is set to True, indicating it’s now marked as complete.
+The database is updated using db.session.commit().
+The user is then redirected back to the / route to view the updated lists:
+
+return redirect(url_for('index'))
+
+Updating Display: After marking complete, the item moves to the Completed Items list on the main page.
+--------------------------------------------------------------------------------------------------------------
+SOME CONFUSION CLEARED:
+{% for todo in incomplete %}
+    <li>{{ todo.text }} <a href="{{ url_for('complete', id=todo.id) }}">Mark As Complete</a></li>
+{% endfor %}
+
+Accessing todo.text in index.html:
+In this template, the for loop iterates through each todo item in the incomplete list.
+Each todo is an instance of the TODO class, so todo.text accesses the text column of that specific TODO item.
+Jinja, the templating engine, uses {{ todo.text }} to render the value of text as plain text in the HTML.
+
+When you retrieve TODO items from the database using SQLAlchemy, each item is an instance of the TODO class. You can access the attributes directly using dot notation (e.g., todo.text, todo.id, etc.)
+Each item in incomplete and complete is an instance of the TODO class, which has attributes corresponding to each column in the todo table, such as id, text, and complete
+
+Each instance can be accessed, and its properties (like text, id, and complete) can be directly accessed.
+--------------------------------------------------------------------------------------------------------------
+SUMMARY OF WORKFLOW:
+Adding New Todo: Default status complete=False, added to the Incomplete Items list.
+Displaying Lists: The / route retrieves and passes incomplete and complete lists to index.html.
+Marking as Complete: Clicking Mark As Complete on an incomplete item changes its complete status to True via /complete<id>.
+Updating Display: After marking complete, the item moves to the Completed Items list on the main page.
